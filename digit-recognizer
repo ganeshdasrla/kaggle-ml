@@ -1,0 +1,1524 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "ba005d4f",
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:08.066789Z",
+     "iopub.status.busy": "2024-06-11T15:01:08.066331Z",
+     "iopub.status.idle": "2024-06-11T15:01:09.198265Z",
+     "shell.execute_reply": "2024-06-11T15:01:09.196304Z"
+    },
+    "papermill": {
+     "duration": 1.145799,
+     "end_time": "2024-06-11T15:01:09.201216",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:08.055417",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/kaggle/input/digit-recognizer/sample_submission.csv\n",
+      "/kaggle/input/digit-recognizer/train.csv\n",
+      "/kaggle/input/digit-recognizer/test.csv\n"
+     ]
+    }
+   ],
+   "source": [
+    "# This Python 3 environment comes with many helpful analytics libraries installed\n",
+    "# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n",
+    "# For example, here's several helpful packages to load\n",
+    "\n",
+    "import numpy as np # linear algebra\n",
+    "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+    "\n",
+    "# Input data files are available in the read-only \"../input/\" directory\n",
+    "# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n",
+    "\n",
+    "import os\n",
+    "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
+    "    for filename in filenames:\n",
+    "        print(os.path.join(dirname, filename))\n",
+    "\n",
+    "# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n",
+    "# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "ecb82ec2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:09.221418Z",
+     "iopub.status.busy": "2024-06-11T15:01:09.220825Z",
+     "iopub.status.idle": "2024-06-11T15:01:13.804617Z",
+     "shell.execute_reply": "2024-06-11T15:01:13.803417Z"
+    },
+    "papermill": {
+     "duration": 4.596917,
+     "end_time": "2024-06-11T15:01:13.807503",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:09.210586",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "df = pd.read_csv('/kaggle/input/digit-recognizer/train.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "7948e446",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:13.827408Z",
+     "iopub.status.busy": "2024-06-11T15:01:13.826941Z",
+     "iopub.status.idle": "2024-06-11T15:01:13.859093Z",
+     "shell.execute_reply": "2024-06-11T15:01:13.858055Z"
+    },
+    "papermill": {
+     "duration": 0.045026,
+     "end_time": "2024-06-11T15:01:13.861574",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:13.816548",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>label</th>\n",
+       "      <th>pixel0</th>\n",
+       "      <th>pixel1</th>\n",
+       "      <th>pixel2</th>\n",
+       "      <th>pixel3</th>\n",
+       "      <th>pixel4</th>\n",
+       "      <th>pixel5</th>\n",
+       "      <th>pixel6</th>\n",
+       "      <th>pixel7</th>\n",
+       "      <th>pixel8</th>\n",
+       "      <th>...</th>\n",
+       "      <th>pixel774</th>\n",
+       "      <th>pixel775</th>\n",
+       "      <th>pixel776</th>\n",
+       "      <th>pixel777</th>\n",
+       "      <th>pixel778</th>\n",
+       "      <th>pixel779</th>\n",
+       "      <th>pixel780</th>\n",
+       "      <th>pixel781</th>\n",
+       "      <th>pixel782</th>\n",
+       "      <th>pixel783</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 785 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   label  pixel0  pixel1  pixel2  pixel3  pixel4  pixel5  pixel6  pixel7  \\\n",
+       "0      1       0       0       0       0       0       0       0       0   \n",
+       "1      0       0       0       0       0       0       0       0       0   \n",
+       "2      1       0       0       0       0       0       0       0       0   \n",
+       "3      4       0       0       0       0       0       0       0       0   \n",
+       "4      0       0       0       0       0       0       0       0       0   \n",
+       "\n",
+       "   pixel8  ...  pixel774  pixel775  pixel776  pixel777  pixel778  pixel779  \\\n",
+       "0       0  ...         0         0         0         0         0         0   \n",
+       "1       0  ...         0         0         0         0         0         0   \n",
+       "2       0  ...         0         0         0         0         0         0   \n",
+       "3       0  ...         0         0         0         0         0         0   \n",
+       "4       0  ...         0         0         0         0         0         0   \n",
+       "\n",
+       "   pixel780  pixel781  pixel782  pixel783  \n",
+       "0         0         0         0         0  \n",
+       "1         0         0         0         0  \n",
+       "2         0         0         0         0  \n",
+       "3         0         0         0         0  \n",
+       "4         0         0         0         0  \n",
+       "\n",
+       "[5 rows x 785 columns]"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "c6c30b21",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:13.882882Z",
+     "iopub.status.busy": "2024-06-11T15:01:13.881961Z",
+     "iopub.status.idle": "2024-06-11T15:01:13.889858Z",
+     "shell.execute_reply": "2024-06-11T15:01:13.888678Z"
+    },
+    "papermill": {
+     "duration": 0.021218,
+     "end_time": "2024-06-11T15:01:13.892500",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:13.871282",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(42000, 785)"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "e4e6a68d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:13.913102Z",
+     "iopub.status.busy": "2024-06-11T15:01:13.912710Z",
+     "iopub.status.idle": "2024-06-11T15:01:13.939856Z",
+     "shell.execute_reply": "2024-06-11T15:01:13.938647Z"
+    },
+    "papermill": {
+     "duration": 0.040598,
+     "end_time": "2024-06-11T15:01:13.942426",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:13.901828",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>label</th>\n",
+       "      <th>pixel0</th>\n",
+       "      <th>pixel1</th>\n",
+       "      <th>pixel2</th>\n",
+       "      <th>pixel3</th>\n",
+       "      <th>pixel4</th>\n",
+       "      <th>pixel5</th>\n",
+       "      <th>pixel6</th>\n",
+       "      <th>pixel7</th>\n",
+       "      <th>pixel8</th>\n",
+       "      <th>...</th>\n",
+       "      <th>pixel774</th>\n",
+       "      <th>pixel775</th>\n",
+       "      <th>pixel776</th>\n",
+       "      <th>pixel777</th>\n",
+       "      <th>pixel778</th>\n",
+       "      <th>pixel779</th>\n",
+       "      <th>pixel780</th>\n",
+       "      <th>pixel781</th>\n",
+       "      <th>pixel782</th>\n",
+       "      <th>pixel783</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>25622</th>\n",
+       "      <td>9</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>1 rows × 785 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "       label  pixel0  pixel1  pixel2  pixel3  pixel4  pixel5  pixel6  pixel7  \\\n",
+       "25622      9       0       0       0       0       0       0       0       0   \n",
+       "\n",
+       "       pixel8  ...  pixel774  pixel775  pixel776  pixel777  pixel778  \\\n",
+       "25622       0  ...         0         0         0         0         0   \n",
+       "\n",
+       "       pixel779  pixel780  pixel781  pixel782  pixel783  \n",
+       "25622         0         0         0         0         0  \n",
+       "\n",
+       "[1 rows x 785 columns]"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.sample()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "b440ff69",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:13.963414Z",
+     "iopub.status.busy": "2024-06-11T15:01:13.962969Z",
+     "iopub.status.idle": "2024-06-11T15:01:13.969297Z",
+     "shell.execute_reply": "2024-06-11T15:01:13.968031Z"
+    },
+    "papermill": {
+     "duration": 0.019952,
+     "end_time": "2024-06-11T15:01:13.971897",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:13.951945",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "X = df.iloc[:,1:]\n",
+    "y = df.iloc[:,0]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "31faf6e1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:13.992963Z",
+     "iopub.status.busy": "2024-06-11T15:01:13.992552Z",
+     "iopub.status.idle": "2024-06-11T15:01:14.001561Z",
+     "shell.execute_reply": "2024-06-11T15:01:14.000267Z"
+    },
+    "papermill": {
+     "duration": 0.022536,
+     "end_time": "2024-06-11T15:01:14.004137",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:13.981601",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0        1\n",
+       "1        0\n",
+       "2        1\n",
+       "3        4\n",
+       "4        0\n",
+       "        ..\n",
+       "41995    0\n",
+       "41996    1\n",
+       "41997    7\n",
+       "41998    6\n",
+       "41999    9\n",
+       "Name: label, Length: 42000, dtype: int64"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "y"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "c35b3450",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:14.025925Z",
+     "iopub.status.busy": "2024-06-11T15:01:14.025495Z",
+     "iopub.status.idle": "2024-06-11T15:01:14.053515Z",
+     "shell.execute_reply": "2024-06-11T15:01:14.052315Z"
+    },
+    "papermill": {
+     "duration": 0.042386,
+     "end_time": "2024-06-11T15:01:14.056459",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:14.014073",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>pixel0</th>\n",
+       "      <th>pixel1</th>\n",
+       "      <th>pixel2</th>\n",
+       "      <th>pixel3</th>\n",
+       "      <th>pixel4</th>\n",
+       "      <th>pixel5</th>\n",
+       "      <th>pixel6</th>\n",
+       "      <th>pixel7</th>\n",
+       "      <th>pixel8</th>\n",
+       "      <th>pixel9</th>\n",
+       "      <th>...</th>\n",
+       "      <th>pixel774</th>\n",
+       "      <th>pixel775</th>\n",
+       "      <th>pixel776</th>\n",
+       "      <th>pixel777</th>\n",
+       "      <th>pixel778</th>\n",
+       "      <th>pixel779</th>\n",
+       "      <th>pixel780</th>\n",
+       "      <th>pixel781</th>\n",
+       "      <th>pixel782</th>\n",
+       "      <th>pixel783</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>41995</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>41996</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>41997</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>41998</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>41999</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>42000 rows × 784 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "       pixel0  pixel1  pixel2  pixel3  pixel4  pixel5  pixel6  pixel7  pixel8  \\\n",
+       "0           0       0       0       0       0       0       0       0       0   \n",
+       "1           0       0       0       0       0       0       0       0       0   \n",
+       "2           0       0       0       0       0       0       0       0       0   \n",
+       "3           0       0       0       0       0       0       0       0       0   \n",
+       "4           0       0       0       0       0       0       0       0       0   \n",
+       "...       ...     ...     ...     ...     ...     ...     ...     ...     ...   \n",
+       "41995       0       0       0       0       0       0       0       0       0   \n",
+       "41996       0       0       0       0       0       0       0       0       0   \n",
+       "41997       0       0       0       0       0       0       0       0       0   \n",
+       "41998       0       0       0       0       0       0       0       0       0   \n",
+       "41999       0       0       0       0       0       0       0       0       0   \n",
+       "\n",
+       "       pixel9  ...  pixel774  pixel775  pixel776  pixel777  pixel778  \\\n",
+       "0           0  ...         0         0         0         0         0   \n",
+       "1           0  ...         0         0         0         0         0   \n",
+       "2           0  ...         0         0         0         0         0   \n",
+       "3           0  ...         0         0         0         0         0   \n",
+       "4           0  ...         0         0         0         0         0   \n",
+       "...       ...  ...       ...       ...       ...       ...       ...   \n",
+       "41995       0  ...         0         0         0         0         0   \n",
+       "41996       0  ...         0         0         0         0         0   \n",
+       "41997       0  ...         0         0         0         0         0   \n",
+       "41998       0  ...         0         0         0         0         0   \n",
+       "41999       0  ...         0         0         0         0         0   \n",
+       "\n",
+       "       pixel779  pixel780  pixel781  pixel782  pixel783  \n",
+       "0             0         0         0         0         0  \n",
+       "1             0         0         0         0         0  \n",
+       "2             0         0         0         0         0  \n",
+       "3             0         0         0         0         0  \n",
+       "4             0         0         0         0         0  \n",
+       "...         ...       ...       ...       ...       ...  \n",
+       "41995         0         0         0         0         0  \n",
+       "41996         0         0         0         0         0  \n",
+       "41997         0         0         0         0         0  \n",
+       "41998         0         0         0         0         0  \n",
+       "41999         0         0         0         0         0  \n",
+       "\n",
+       "[42000 rows x 784 columns]"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "4797784d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:14.079243Z",
+     "iopub.status.busy": "2024-06-11T15:01:14.078802Z",
+     "iopub.status.idle": "2024-06-11T15:01:15.700568Z",
+     "shell.execute_reply": "2024-06-11T15:01:15.699229Z"
+    },
+    "papermill": {
+     "duration": 1.636727,
+     "end_time": "2024-06-11T15:01:15.703730",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:14.067003",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.model_selection import train_test_split"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "d99f5fbd",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:15.727693Z",
+     "iopub.status.busy": "2024-06-11T15:01:15.727266Z",
+     "iopub.status.idle": "2024-06-11T15:01:15.979444Z",
+     "shell.execute_reply": "2024-06-11T15:01:15.978252Z"
+    },
+    "papermill": {
+     "duration": 0.267626,
+     "end_time": "2024-06-11T15:01:15.982437",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:15.714811",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "1543a835",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:16.007474Z",
+     "iopub.status.busy": "2024-06-11T15:01:16.006059Z",
+     "iopub.status.idle": "2024-06-11T15:01:16.218799Z",
+     "shell.execute_reply": "2024-06-11T15:01:16.217488Z"
+    },
+    "papermill": {
+     "duration": 0.227956,
+     "end_time": "2024-06-11T15:01:16.221645",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:15.993689",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.neighbors import KNeighborsClassifier\n",
+    "knn = KNeighborsClassifier() "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "c009aca9",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:16.245201Z",
+     "iopub.status.busy": "2024-06-11T15:01:16.244754Z",
+     "iopub.status.idle": "2024-06-11T15:01:16.411431Z",
+     "shell.execute_reply": "2024-06-11T15:01:16.410012Z"
+    },
+    "papermill": {
+     "duration": 0.182126,
+     "end_time": "2024-06-11T15:01:16.414384",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:16.232258",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: \"▸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"▾\";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-1\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>KNeighborsClassifier()</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-1\" type=\"checkbox\" checked><label for=\"sk-estimator-id-1\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">KNeighborsClassifier</label><div class=\"sk-toggleable__content\"><pre>KNeighborsClassifier()</pre></div></div></div></div></div>"
+      ],
+      "text/plain": [
+       "KNeighborsClassifier()"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "knn.fit(X_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "77f06938",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:16.437757Z",
+     "iopub.status.busy": "2024-06-11T15:01:16.437058Z",
+     "iopub.status.idle": "2024-06-11T15:01:29.864558Z",
+     "shell.execute_reply": "2024-06-11T15:01:29.863188Z"
+    },
+    "papermill": {
+     "duration": 13.442062,
+     "end_time": "2024-06-11T15:01:29.867221",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:16.425159",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "13.421176671981812\n"
+     ]
+    }
+   ],
+   "source": [
+    "import time\n",
+    "start = time.time()\n",
+    "y_pred = knn.predict(X_test)\n",
+    "print(time.time()-start)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "c182543a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:29.891133Z",
+     "iopub.status.busy": "2024-06-11T15:01:29.890758Z",
+     "iopub.status.idle": "2024-06-11T15:01:29.899499Z",
+     "shell.execute_reply": "2024-06-11T15:01:29.898140Z"
+    },
+    "papermill": {
+     "duration": 0.023776,
+     "end_time": "2024-06-11T15:01:29.901971",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:29.878195",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy: 0.9648809523809524\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.metrics import accuracy_score\n",
+    "\n",
+    "# Assuming y_test and y_pred are your true labels and predicted labels, respectively\n",
+    "accuracy = accuracy_score(y_test, y_pred)\n",
+    "print(\"Accuracy:\", accuracy)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "7606676d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:29.925582Z",
+     "iopub.status.busy": "2024-06-11T15:01:29.925115Z",
+     "iopub.status.idle": "2024-06-11T15:01:29.930900Z",
+     "shell.execute_reply": "2024-06-11T15:01:29.929642Z"
+    },
+    "papermill": {
+     "duration": 0.020724,
+     "end_time": "2024-06-11T15:01:29.933608",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:29.912884",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.preprocessing import StandardScaler\n",
+    "scaler = StandardScaler()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "0c8a639a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:29.957867Z",
+     "iopub.status.busy": "2024-06-11T15:01:29.957434Z",
+     "iopub.status.idle": "2024-06-11T15:01:30.461392Z",
+     "shell.execute_reply": "2024-06-11T15:01:30.460266Z"
+    },
+    "papermill": {
+     "duration": 0.519429,
+     "end_time": "2024-06-11T15:01:30.464359",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:29.944930",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Fit the scaler to training data and transform it\n",
+    "X_train = scaler.fit_transform(X_train)\n",
+    "\n",
+    "# Transform the test data using the mean and standard deviation of the training data\n",
+    "X_test = scaler.transform(X_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "dd8485b3",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:30.489967Z",
+     "iopub.status.busy": "2024-06-11T15:01:30.489537Z",
+     "iopub.status.idle": "2024-06-11T15:01:30.494830Z",
+     "shell.execute_reply": "2024-06-11T15:01:30.493717Z"
+    },
+    "papermill": {
+     "duration": 0.020017,
+     "end_time": "2024-06-11T15:01:30.497269",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:30.477252",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.decomposition import PCA\n",
+    "pca = PCA(n_components=200)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "59a62ab4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:30.520654Z",
+     "iopub.status.busy": "2024-06-11T15:01:30.520231Z",
+     "iopub.status.idle": "2024-06-11T15:01:35.586020Z",
+     "shell.execute_reply": "2024-06-11T15:01:35.583969Z"
+    },
+    "papermill": {
+     "duration": 5.083025,
+     "end_time": "2024-06-11T15:01:35.591162",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:30.508137",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "X_train_pca = pca.fit_transform(X_train)\n",
+    "X_test_pca = pca.transform(X_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "6b1953d8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:35.644006Z",
+     "iopub.status.busy": "2024-06-11T15:01:35.643257Z",
+     "iopub.status.idle": "2024-06-11T15:01:35.653654Z",
+     "shell.execute_reply": "2024-06-11T15:01:35.652043Z"
+    },
+    "papermill": {
+     "duration": 0.042335,
+     "end_time": "2024-06-11T15:01:35.658673",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:35.616338",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(33600, 200)"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_train_pca.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "90601f06",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:35.706322Z",
+     "iopub.status.busy": "2024-06-11T15:01:35.705890Z",
+     "iopub.status.idle": "2024-06-11T15:01:35.742748Z",
+     "shell.execute_reply": "2024-06-11T15:01:35.741222Z"
+    },
+    "papermill": {
+     "duration": 0.063092,
+     "end_time": "2024-06-11T15:01:35.745783",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:35.682691",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style>#sk-container-id-2 {color: black;background-color: white;}#sk-container-id-2 pre{padding: 0;}#sk-container-id-2 div.sk-toggleable {background-color: white;}#sk-container-id-2 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-2 label.sk-toggleable__label-arrow:before {content: \"▸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-2 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-2 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-2 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-2 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-2 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-2 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"▾\";}#sk-container-id-2 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-2 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-2 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-2 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-2 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-2 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-2 div.sk-item {position: relative;z-index: 1;}#sk-container-id-2 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-2 div.sk-item::before, #sk-container-id-2 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-2 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-2 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-2 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-2 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-2 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-2 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-2 div.sk-label-container {text-align: center;}#sk-container-id-2 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-2 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-2\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>KNeighborsClassifier()</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-2\" type=\"checkbox\" checked><label for=\"sk-estimator-id-2\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">KNeighborsClassifier</label><div class=\"sk-toggleable__content\"><pre>KNeighborsClassifier()</pre></div></div></div></div></div>"
+      ],
+      "text/plain": [
+       "KNeighborsClassifier()"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "knn.fit(X_train_pca, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "4a649459",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:35.771368Z",
+     "iopub.status.busy": "2024-06-11T15:01:35.770900Z",
+     "iopub.status.idle": "2024-06-11T15:01:38.641752Z",
+     "shell.execute_reply": "2024-06-11T15:01:38.640396Z"
+    },
+    "papermill": {
+     "duration": 2.887633,
+     "end_time": "2024-06-11T15:01:38.644658",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:35.757025",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2.8645973205566406\n"
+     ]
+    }
+   ],
+   "source": [
+    "import time\n",
+    "start = time.time()\n",
+    "y_pred = knn.predict(X_test_pca)\n",
+    "print(time.time()-start)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "b68633fe",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:38.669729Z",
+     "iopub.status.busy": "2024-06-11T15:01:38.669330Z",
+     "iopub.status.idle": "2024-06-11T15:01:38.678557Z",
+     "shell.execute_reply": "2024-06-11T15:01:38.677189Z"
+    },
+    "papermill": {
+     "duration": 0.025428,
+     "end_time": "2024-06-11T15:01:38.681556",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:38.656128",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy: 0.9503571428571429\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Assuming y_test and y_pred are your true labels and predicted labels, respectively\n",
+    "accuracy = accuracy_score(y_test, y_pred)\n",
+    "print(\"Accuracy:\", accuracy)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "33eec827",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:38.706299Z",
+     "iopub.status.busy": "2024-06-11T15:01:38.705874Z",
+     "iopub.status.idle": "2024-06-11T15:01:38.713062Z",
+     "shell.execute_reply": "2024-06-11T15:01:38.711851Z"
+    },
+    "papermill": {
+     "duration": 0.022958,
+     "end_time": "2024-06-11T15:01:38.715789",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:38.692831",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(33600, 784)"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_train.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "5441f980",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:38.741807Z",
+     "iopub.status.busy": "2024-06-11T15:01:38.741395Z",
+     "iopub.status.idle": "2024-06-11T15:01:38.749161Z",
+     "shell.execute_reply": "2024-06-11T15:01:38.747918Z"
+    },
+    "papermill": {
+     "duration": 0.023894,
+     "end_time": "2024-06-11T15:01:38.751575",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:38.727681",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(33600, 200)"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_train_pca.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "48e07717",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-06-11T15:01:38.776744Z",
+     "iopub.status.busy": "2024-06-11T15:01:38.776270Z",
+     "iopub.status.idle": "2024-06-11T15:01:45.633428Z",
+     "shell.execute_reply": "2024-06-11T15:01:45.632074Z"
+    },
+    "papermill": {
+     "duration": 6.873066,
+     "end_time": "2024-06-11T15:01:45.636271",
+     "exception": false,
+     "start_time": "2024-06-11T15:01:38.763205",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1 0.25833333333333336\n",
+      "2 0.32416666666666666\n",
+      "3 0.5101190476190476\n",
+      "4 0.6664285714285715\n"
+     ]
+    }
+   ],
+   "source": [
+    "for i in range(1, 5): # 785\n",
+    "    pca = PCA(n_components=i)\n",
+    "    X_train_pca = pca.fit_transform(X_train)\n",
+    "    X_test_pca = pca.transform(X_test)\n",
+    "    knn.fit(X_train_pca, y_train)\n",
+    "    \n",
+    "    y_pred = knn.predict(X_test_pca)\n",
+    "    print(i, accuracy_score(y_test, y_pred))"
+   ]
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "databundleVersionId": 861823,
+     "sourceId": 3004,
+     "sourceType": "competition"
+    }
+   ],
+   "dockerImageVersionId": 30732,
+   "isGpuEnabled": false,
+   "isInternetEnabled": true,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.13"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 41.712562,
+   "end_time": "2024-06-11T15:01:46.271260",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2024-06-11T15:01:04.558698",
+   "version": "2.5.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
